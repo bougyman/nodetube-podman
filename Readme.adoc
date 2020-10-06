@@ -9,7 +9,7 @@ endif::[]
 
 ## Why?
 
-I wanted to get nodetube running on podman and a portable deployment for running in either podman or kubernetes (via podman play).
+I wanted to get nodetube running on https://github.com/mayeaux/nodetube[podman] and a portable deployment for running in either podman or kubernetes (via `podman play`, `podman generate` or kubernetes deployment).
 
 ## How?
 
