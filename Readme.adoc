@@ -27,3 +27,65 @@ git clone https://github.com/mayeaux/nodetube
 git clone https://github.com/bougyman/nodetube-podman
 ----
 
+### Build nodetube
+
+[source]
+----
+cd ~/g/nodetube
+podman build -t <NODETUBE_IMAGE_NAME> . <1>
+----
+<1> The image name can be specified to anything you like
+
+### Symlink the nodetube app directory
+
+[source]
+----
+cd ~/g/nodetube-podman
+ln -s ../nodetube ./app
+----
+
+### Configure the services
+
+First set the proper working directory (the full path to the clone of nodetube-podman)
+
+`echo /path/to/nodetube-podman > /path/to/nodetube-podman/sv/nodetube/env/WORKDIR`
+
+For our `~g/`:
+`echo ~/g/nodetube-podman > ~/g/nodetube-podman/sv/nodetube/env/WORKDIR`
+
+Then set the image name you chose in the build step.
+
+`echo <NODETUBE_IMAGE_NAME> > ~/g/nodetube-podman/sv/nodetube/env/NODETUBE_IMAGE`
+
+Optionally:
+
+Change the pod name
+`echo <YOUR_PODNAME_CHOICE> > ~/g/nodetube-podman/sv/nodetube/env/PODNAME`
+
+### Run the services
+
+This can be done with a supervisor that supports daemontools/runit style 'run' scripts, or any supervision method you choose.
+
+#### Manually running services
+
+[source]
+----
+cd ~/g/nodetube-podman/sv/nodetube
+./run
+-----
+
+And in separate tmux panes, terminals, whatever:
+
+[source]
+----
+cd ~/g/nodetube-podman/sv/nodetube-mongo
+./run
+-----
+
+[source]
+----
+cd ~/g/nodetube-podman/sv/nodetube-redis
+./run
+-----
+
+That's it, you should be able to access podman at localhost:18080 with the websocket at localhost:18081
