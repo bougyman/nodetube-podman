@@ -1,0 +1,9 @@
+#!/bin/bash
+exec 2>&1
+PODNAME=$(<./env/PODNAME)
+if ! podman pod exists "$PODNAME"
+then
+    echo "Pod $PODNAME does not exist, sleeping for a bit"
+    exec sleep 5
+fi
+exec podman run --pod $PODNAME redis
