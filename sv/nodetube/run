@@ -2,9 +2,21 @@
 exec 2>&1
 PODNAME=$(<./env/PODNAME)
 WORKDIR=$(<./env/WORKDIR)
+NODETUBE_IMAGE=$(<./env/NODETUBE_IMAGE)
 if ! podman pod exists "$PODNAME"
 then
     echo "Pod $PODNAME does not exist, creating it"
     podman pod create --name "$PODNAME" -p 18080:3000 -p 18081:8443
 fi
-exec podman run --pod "$PODNAME" -v "$WORKDIR"/nodetube:/app -v /app/node_modules -v "$WORKDIR"/upload:/app/upload -v "$WORKDIR"/uploads:/app/uploads -e REDIS_HOST=localhost -e MONGODB_DOCKER_URI=mongodb://localhost:27017/nodetube --rm -it localhost/nodetube-bougyman npm start
+CMD=(
+	podman run --pod "$PODNAME"
+	-v "$WORKDIR"/app:/app             # $WORKDIR/app should be symlinked to the nodetube gh clone
+	-v /app/node_modules
+	-v "$WORKDIR"/upload:/app/upload   # $WORKDIR/upload can be a symlink. It's where uploaded temp files are stored
+	-v "$WORKDIR"/uploads:/app/uploads # $WORKDIR/uploads will be where files are served from
+	-e REDIS_HOST=localhost
+	-e MONGODB_DOCKER_URI=mongodb://localhost:27017/nodetube
+	--rm "$NODETUBE_IMAGE"             # The image name to run
+	npm start
+)
+exec "${CMD[@]}"

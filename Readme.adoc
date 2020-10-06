@@ -1,0 +1,26 @@
+# Nodetube running with podman
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+## Why?
+
+I wanted to get nodetube running on podman and a portable deployment for running in either podman or kubernetes (via podman play).
+
+## How?
+
+### Assumptions
+
+This assumes everything will be checked out in ```~/g```
+
+```cd ~/g```
+
+### Clone nodetube and nodetube-podman
+
+```git clone https://github.com/mayeaux/nodetube```
+```git clone https://github.com/bougyman/nodetube-podman```
+

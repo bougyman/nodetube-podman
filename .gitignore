@@ -1,4 +1,4 @@
 data/db
 sv/*/log
 sv/*/supervise
-nodetube
+app
