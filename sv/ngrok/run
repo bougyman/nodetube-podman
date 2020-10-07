@@ -1,0 +1,4 @@
+#!/bin/bash
+exec 2>&1
+export PATH=~/.local/bin:$PATH
+exec ngrok start --all --log stdout

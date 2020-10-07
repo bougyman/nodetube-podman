@@ -2,3 +2,7 @@ data/db
 sv/*/log
 sv/*/supervise
 app
+config/*.js
+uploads/
+.env.private
+.env.settings

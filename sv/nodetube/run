@@ -1,21 +1,33 @@
 #!/bin/bash
 exec 2>&1
+set -x
 PODNAME=$(<./env/PODNAME)
 WORKDIR=$(<./env/WORKDIR)
 NODETUBE_IMAGE=$(<./env/NODETUBE_IMAGE)
 if ! podman pod exists "$PODNAME"
 then
     echo "Pod $PODNAME does not exist, creating it"
-    podman pod create --name "$PODNAME" -p 18080:3000 -p 18081:8443
+    podman pod create --name "$PODNAME" -p 27017:27017 -p 18080:3000 -p 18081:8443
 fi
-CMD=(
-	podman run --pod "$PODNAME"
-	-v "$WORKDIR"/app:/app             # $WORKDIR/app should be symlinked to the nodetube gh clone
-	-v /app/node_modules
-	-v "$WORKDIR"/upload:/app/upload   # $WORKDIR/upload can be a symlink. It's where uploaded temp files are stored
+CMD=( podman run --pod "$PODNAME" -v /app/node_modules )
+
+# Mount any config changes we have
+for config in "$WORKDIR"/config/*.js
+do
+    CMD+=( -v "$config":/app/config/"${config##*/}" )
+done
+
+# And any settings we have
+for setting in "$WORKDIR"/.env.*
+do
+    CMD+=( -v "$setting":/app/"${setting##*/}" )
+done
+
+CMD+=(
+    -v "$WORKDIR"/upload:/app/upload   # $WORKDIR/upload can be a symlink. It's where uploaded temp files are stored
 	-v "$WORKDIR"/uploads:/app/uploads # $WORKDIR/uploads will be where files are served from
 	-e REDIS_HOST=localhost
-	-e MONGODB_DOCKER_URI=mongodb://localhost:27017/nodetube
+	-e MONGODB_URI=mongodb://localhost:27017/nodetube
 	--rm "$NODETUBE_IMAGE"             # The image name to run
 	npm start
 )
