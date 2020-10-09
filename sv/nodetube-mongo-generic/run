@@ -1,0 +1,50 @@
+#!/bin/bash
+: "${MONGO_VERSION:=4.4}"
+exec 2>&1
+# set -x
+# Set $here to the full path to this script
+me=${BASH_SOURCE[0]}
+here=$(cd "$(dirname "$me")" && pwd)
+real_me=$(readlink -f "$me")
+real_here=$(dirname "${real_me}")
+here_dir=$(basename "$here")
+number=${here_dir##*-}
+app_name=${here_dir%%-*}
+infra_name="${app_name}-${number}"
+my_base=${app_name}-mongo
+
+[ -d env ] || ln -vs "${real_here}"/env || {
+    echo "Could not create ./env"
+    sleep 5
+    exit 125
+}
+
+WORKDIR=$(<./env/WORKDIR)
+data_dir="${WORKDIR}/data-${number}/db"
+[ -d "${data_dir}" ] || mkdir -p "$data_dir"
+
+[ -d log ] || mkdir -v log
+[ -x log/run ] || {
+    pushd log
+    ln -s "${real_here}/log/run"
+    popd
+}
+
+container_name="${my_base}-${number}"
+
+if echo $number | grep -Eq '^[0-9][0-9]$'
+then
+    echo "Starting $my_base instance $number (data_dir: ${data_dir})"
+else
+    echo "This directory ($here_dir) must be named in the format <name>-NN where NN is a number"
+    exit 9
+fi
+
+if ! podman pod exists "$infra_name"
+then
+    echo "Pod $infra_name does not exist, sleeping for a bit"
+    exec sleep 5
+fi
+
+#exec chpst -e ./env podman run --rm --name "$container_name" --pod "$infra_name" -v "${data_dir}:/data/db" mongo:"${MONGO_VERSION}" mongod --bind_ip_all
+exec chpst -e ./env podman run --rm --name "$container_name" --pod "$infra_name" -v "${data_dir}:/data/db" mongo:"${MONGO_VERSION}" mongod --bind_ip_all --replSet "${app_name}"

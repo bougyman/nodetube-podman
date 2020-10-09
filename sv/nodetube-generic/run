@@ -1,0 +1,71 @@
+#!/bin/bash
+exec 2>&1
+# set -x
+# Set $here to the full path to this script
+me=${BASH_SOURCE[0]}
+real_me=$(readlink -f "$me")
+real_here=$(dirname "$real_me")
+here=$(cd "$(dirname "$me")" && pwd)
+here_dir=$(basename "$here")
+number=${here_dir##*-}
+app_name=${here_dir%%-*}
+
+if echo $number | grep -Eq '^[0-9][0-9]$'
+then
+    echo Starting ${app_name} instance "$number"
+else
+    echo "This directory ($here_dir) must be named in the format <name>-NN where NN is a number"
+    exit 9
+fi
+
+WORKDIR=$(<./env/WORKDIR)
+NODETUBE_IMAGE=$(<./env/NODETUBE_IMAGE)
+infra_name="${app_name}-$number"
+container_name="${app_name}-app-$number"
+if ! podman network inspect "$app_name" >/dev/null 2>&1
+then
+    echo "Network '$app_name' does not exist, creating it"
+    podman network create "$app_name"
+fi
+
+mongo_port=271${number}
+web_port=181${number}
+websocket_port=182${number}
+if ! podman pod exists "$infra_name"
+then
+    echo "Pod $infra_name does not exist, creating it"
+    podman --runtime=crun pod create --name "$infra_name" --network "$app_name" -p "$mongo_port":27017 -p "${web_port}":3000 -p "${websocket_port}":8443
+fi
+
+# Root of the podman command
+CMD=( podman run --pod "$infra_name" --name "$container_name" )
+
+# Mount any config changes we have
+for config in "$WORKDIR"/config/*.js
+do
+    CMD+=( -v "$config":/app/config/"${config##*/}" )
+done
+
+# And any settings we have
+for setting in "$WORKDIR"/.env.*
+do
+    CMD+=( -v "$setting":/app/"${setting##*/}" )
+done
+
+CMD+=(
+    -v "$WORKDIR"/upload:/app/upload   # $WORKDIR/upload can be a symlink. It's where uploaded temp files are stored
+	-v "$WORKDIR"/uploads:/app/uploads # $WORKDIR/uploads will be where files are served from
+	-e REDIS_URL=redis://${app_name}-${number}:6379
+	-e MONGODB_URI="mongodb://${app_name}-${number}:27017/nodetube?replicaSet=${app_name}"
+	--rm "$NODETUBE_IMAGE"             # The image name to run
+	npm start
+)
+
+[ -d ./log ] || mkdir log
+[ -x ./log/run ] || {
+    pushd log
+    ln -s "$real_here"/log/run
+    popd
+}
+set -x
+exec chpst -e ./env "${CMD[@]}"
