@@ -1,0 +1,154 @@
+# Generation of Kubernetes YAML is still under development!
+#
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-2.1.1
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2020-10-11T21:48:56Z"
+  labels:
+    app: nodetube
+  name: nodetube
+spec:
+  containers:
+  - command:
+    - redis-server
+    env:
+    - name: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - name: REDIS_VERSION
+      value: 6.0.8
+    - name: REDIS_DOWNLOAD_URL
+      value: http://download.redis.io/releases/redis-6.0.8.tar.gz
+    - name: REDIS_DOWNLOAD_SHA
+      value: 04fa1fddc39bd1aecb6739dd5dd73858a3515b427acd1e2947a66dadce868d68
+    - name: HOSTNAME
+      value: nodetube-01
+    image: docker.io/library/redis:latest
+    name: nodetube-redis-01
+    ports:
+    - containerPort: 27017
+      hostPort: 27101
+      protocol: TCP
+    - containerPort: 3000
+      hostPort: 18101
+      protocol: TCP
+    - containerPort: 8443
+      hostPort: 18201
+      protocol: TCP
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+      seLinuxOptions: {}
+    workingDir: /data
+  - command:
+    - mongod
+    - --bind_ip_all
+    - --replSet
+    - nodetube
+    env:
+    - name: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - name: MONGO_REPO
+      value: repo.mongodb.org
+    - name: MONGO_MAJOR
+      value: "4.4"
+    - name: GOSU_VERSION
+      value: "1.12"
+    - name: MONGO_PACKAGE
+      value: mongodb-org
+    - name: containers
+      value: podman
+    - name: MONGO_VERSION
+      value: 4.4.1
+    - name: JSYAML_VERSION
+      value: 3.13.1
+    - name: GPG_KEYS
+      value: 20691EEC35216C63CAF66CE1656408E390CFB1F5
+    image: docker.io/library/mongo:4.4
+    name: nodetube-mongo-01
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+      seLinuxOptions: {}
+    volumeMounts:
+    - mountPath: /data/db
+      name: home-bougyman-g-nodetube-podman-data-01-db
+    workingDir: /
+  - command:
+    - npm
+    - start
+    env:
+    - name: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - name: TERM
+      value: linux
+    - name: MONGODB_URI
+      value: mongodb://nodetube-01:27017/nodetube?replicaSet=nodetube
+    - name: REDIS_URL
+      value: redis://nodetube-01:6379
+    - name: HOSTNAME
+      value: nodetube-01
+    image: localhost/nodetube:latest
+    name: nodetube-app-01
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+      seLinuxOptions: {}
+    volumeMounts:
+    - mountPath: /app/config/categories.js
+      name: home-bougyman-g-nodetube-podman-config-categories.js
+    - mountPath: /app/.env.private
+      name: home-bougyman-g-nodetube-podman-.env.private
+    - mountPath: /app/.env.settings
+      name: home-bougyman-g-nodetube-podman-.env.settings
+    - mountPath: /app/upload
+      name: home-bougyman-g-nodetube-podman-upload
+    - mountPath: /app/uploads
+      name: home-bougyman-g-nodetube-podman-uploads
+    workingDir: /app/
+  restartPolicy: Never
+  volumes:
+  - hostPath:
+      path: /home/bougyman/g/nodetube-podman/uploads
+      type: Directory
+    name: home-bougyman-g-nodetube-podman-uploads
+  - hostPath:
+      path: /home/bougyman/g/nodetube-podman/data-01/db
+      type: Directory
+    name: home-bougyman-g-nodetube-podman-data-01-db
+  - hostPath:
+      path: /home/bougyman/g/nodetube-podman/config/categories.js
+      type: File
+    name: home-bougyman-g-nodetube-podman-config-categories.js
+  - hostPath:
+      path: /home/bougyman/g/nodetube-podman/.env.private
+      type: File
+    name: home-bougyman-g-nodetube-podman-.env.private
+  - hostPath:
+      path: /home/bougyman/g/nodetube-podman/.env.settings
+      type: File
+    name: home-bougyman-g-nodetube-podman-.env.settings
+  - hostPath:
+      path: /home/bougyman/g/nodetube-podman/upload
+      type: Directory
+    name: home-bougyman-g-nodetube-podman-upload
+status: {}
+---
+metadata:
+  creationTimestamp: null
+spec: {}
+status:
+  loadBalancer: {}
+
